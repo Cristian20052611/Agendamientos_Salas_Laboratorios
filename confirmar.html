@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmar reserva · Agenda de Aulas Sede II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+</head>
+<body>
+
+<div id="login-screen" style="display:flex;">
+  <div class="id-card">
+    <div class="badge">S2</div>
+    <h1>Confirmar reserva</h1>
+    <p class="subtitle" id="confirm-msg">Verificando...</p>
+    <div id="confirm-detail" style="font-size:13.5px; color:var(--ink-soft); margin-top:6px; line-height:1.5;"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var msg = document.getElementById('confirm-msg');
+  var detail = document.getElementById('confirm-detail');
+
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get('id');
+  var token = params.get('token');
+
+  if(!id || !token){
+    msg.textContent = 'Link inválido: falta información para confirmar.';
+    return;
+  }
+  if(typeof supabaseClient === 'undefined' || !supabaseClient){
+    msg.textContent = 'Falta configurar Supabase en supabase-config.js';
+    return;
+  }
+
+  supabaseClient
+    .from('bookings')
+    .update({estado: 'confirmada'})
+    .eq('id', id)
+    .eq('confirm_token', token)
+    .select()
+    .then(function(res){
+      if(res.error){
+        console.error(res.error);
+        msg.textContent = 'No se pudo confirmar la reserva. Intenta de nuevo.';
+        return;
+      }
+      if(!res.data || res.data.length === 0){
+        msg.textContent = 'Este link ya no es válido (la reserva no existe o ya fue cancelada).';
+        return;
+      }
+      var b = res.data[0];
+      msg.textContent = '¡Reserva confirmada!';
+      detail.textContent = 'Salón ' + b.room + ' · ' + b.date + ' · ' + b.slot + ' · Agendado por ' + b.app_user;
+    });
+})();
+</script>
+
+</body>
+</html>

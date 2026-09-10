@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda de Aulas · Sede II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="email-config.js"></script>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-screen">
+  <form class="id-card" id="login-form">
+    <div class="badge">S2</div>
+    <h1>Agenda de Aulas</h1>
+    <p class="subtitle">Sede II · Acceso de usuarios</p>
+    <div class="field">
+      <label for="login-user">Usuario o código</label>
+      <input type="text" id="login-user" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="login-pass">Contraseña</label>
+      <input type="password" id="login-pass" autocomplete="current-password" required>
+    </div>
+    <div id="login-error"></div>
+    <button type="submit" class="btn-primary">Ingresar</button>
+    <p class="login-hint">Demo: cualquier usuario y contraseña funcionan.</p>
+  </form>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app-screen">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark mono">S2</div>
+      <div class="brand-text">
+        <h2>Agenda de Aulas</h2>
+        <span>Sede II · Salones y laboratorios</span>
+      </div>
+    </div>
+    <div class="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-name">Usuario</span>
+      <button class="btn-ghost" id="my-bookings-btn">Mis reservas</button>
+      <button class="btn-ghost" id="logout-btn">Salir</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="filters">
+      <div class="filter-group">
+        <h3>Franja horaria</h3>
+        <button class="chip-option active" data-franja="manana">Clases fijas · 8–12 y 18–22</button>
+        <button class="chip-option" data-franja="tarde">Agendar · 12:00–18:00</button>
+      </div>
+
+      <div class="filter-group">
+        <h3>Fecha a consultar</h3>
+        <input type="date" id="date-picker">
+      </div>
+
+      <div class="filter-group">
+        <h3>Piso</h3>
+        <button class="chip-option active" data-piso="todos">Todos los pisos</button>
+        <button class="chip-option" data-piso="1">Piso 1 (104–110)</button>
+        <button class="chip-option" data-piso="2">Piso 2 (206–220)</button>
+        <button class="chip-option" data-piso="3">Piso 3 (301–312)</button>
+        <button class="chip-option" data-piso="4">Piso 4 (401–405)</button>
+        <button class="chip-option" data-piso="5">Piso 5 (501–502)</button>
+        <button class="chip-option" data-piso="lab">Laboratorios</button>
+        <button class="chip-option" data-piso="especial">Salas especiales</button>
+      </div>
+
+      <div class="filter-group">
+        <div class="franja-note" id="franja-note">
+          Las clases fijas de la universidad son de 8:00 a 12:00 y de 18:00 a 22:00 (bloques de 2 horas). El espacio libre para agendar es de 12:00 a 18:00. Los laboratorios solo se agendan de 18:00 a 22:00.
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="content-head">
+        <h2 id="content-title">Consultar disponibilidad</h2>
+      </div>
+      <div class="content-sub" id="content-sub">Estado de los salones por bloque de clase fija.</div>
+
+      <div class="legend">
+        <div class="legend-item"><span class="dot available"></span> Disponible</div>
+        <div class="legend-item"><span class="dot occupied"></span> Ocupado</div>
+        <div class="legend-item"><span class="dot mine"></span> Tu reserva</div>
+      </div>
+
+      <div class="room-grid" id="room-grid"></div>
+      <div class="empty-state" id="empty-state" style="display:none;">No hay salones para este filtro.</div>
+    </main>
+  </div>
+</div>
+
+<!-- ============ MODAL ============ -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-room-title">Salón</h3>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="room-detail" id="room-detail"></div>
+
+    <!-- INFO VIEW: mañana, solo lectura -->
+    <div id="modal-info" class="modal-section">
+      <div class="block-info-list" id="block-info-list"></div>
+      <button class="btn-primary" id="info-go-agendar" type="button" style="margin-top:14px;">Agendar este salón (12:00–18:00) ›</button>
+    </div>
+
+    <!-- CALENDAR VIEW: paso 1 para agendar -->
+    <div id="modal-calendar" class="modal-section">
+      <div class="calendar-nav">
+        <button id="cal-prev" class="cal-nav-btn" type="button">‹</button>
+        <span id="cal-month-label" class="cal-month-label"></span>
+        <button id="cal-next" class="cal-nav-btn" type="button">›</button>
+      </div>
+      <div class="calendar-weekdays">
+        <span>D</span><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+      <p class="calendar-note">Puedes agendar cualquier día dentro del mes del módulo (hoy + 30 días).</p>
+    </div>
+
+    <!-- SLOTS VIEW: paso 2, elegir hora -->
+    <div id="modal-slots" class="modal-section">
+      <button class="back-link" id="back-to-calendar" type="button">‹ Volver al calendario</button>
+      <div class="slot-list" id="slot-list"></div>
+
+      <div class="booking-form" id="booking-form">
+        <label for="booking-doc">Documento de identidad</label>
+        <input type="text" id="booking-doc" placeholder="Ej: 1029384756" inputmode="numeric">
+        <label for="booking-subject">Motivo / materia</label>
+        <input type="text" id="booking-subject" placeholder="Ej: Estudio en grupo, Álgebra Lineal">
+        <div class="row-btns">
+          <button class="btn-primary btn-confirm" id="confirm-booking" type="button">Confirmar reserva</button>
+          <button class="btn-primary btn-muted" id="cancel-form" type="button">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ MIS RESERVAS ============ -->
+<div class="modal-backdrop" id="mybookings-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Mis reservas</h3>
+      <button class="modal-close" id="mybookings-close">✕</button>
+    </div>
+    <div class="modal-sub">Estas son las horas que has agendado. Puedes cancelarlas desde aquí.</div>
+    <div class="slot-list" id="mybookings-list"></div>
+    <div class="empty-state" id="mybookings-empty" style="display:none;">Todavía no tienes reservas.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ============ PANEL COORDINADOR ============ -->
+<div id="coordinador-screen">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark mono">S2</div>
+      <div class="brand-text">
+        <h2>Panel del Coordinador</h2>
+        <span>Editar horario fijo de clases</span>
+      </div>
+    </div>
+    <div class="user-chip">
+      <button class="btn-ghost" id="coord-logout-btn">Salir</button>
+    </div>
+  </header>
+
+  <div class="content" style="padding:24px;">
+    <button class="btn-primary" id="coord-new-btn" type="button" style="margin-bottom:16px;">+ Agregar clase</button>
+    <div class="coord-table-wrap">
+      <table class="coord-table">
+        <thead>
+          <tr><th>Salón</th><th>Bloque</th><th>Jornada</th><th>Programa</th><th>Semestre</th><th>Asignatura</th><th>Docente</th><th></th></tr>
+        </thead>
+        <tbody id="coord-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar una clase del horario fijo -->
+<div class="modal-backdrop" id="coord-modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="coord-modal-title">Nueva clase</h3>
+      <button class="modal-close" id="coord-modal-close">✕</button>
+    </div>
+    <div class="booking-form open">
+      <label for="coord-code">Salón (código)</label>
+      <input type="text" id="coord-code" placeholder="Ej: 213">
+      <label for="coord-block">Bloque</label>
+      <select id="coord-block">
+        <option value="8-10">8:00 – 10:00</option>
+        <option value="10-12">10:00 – 12:00</option>
+        <option value="18-20">18:00 – 20:00</option>
+        <option value="20-22">20:00 – 22:00</option>
+      </select>
+      <label for="coord-jornada">Jornada</label>
+      <input type="text" id="coord-jornada" placeholder="Diurna / Nocturna">
+      <label for="coord-programa">Programa</label>
+      <input type="text" id="coord-programa" placeholder="Ej: Ingeniería del Software">
+      <label for="coord-semestre">Semestre</label>
+      <input type="text" id="coord-semestre" placeholder="Ej: 4A">
+      <label for="coord-asignatura">Asignatura</label>
+      <input type="text" id="coord-asignatura">
+      <label for="coord-docente">Docente</label>
+      <input type="text" id="coord-docente">
+      <div class="row-btns">
+        <button class="btn-primary btn-confirm" id="coord-save-btn" type="button">Guardar</button>
+        <button class="btn-primary btn-muted" id="coord-cancel-btn" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
