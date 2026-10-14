@@ -25,3 +25,7 @@ const EMAILJS_SERVICE_ID = "service_dzasfth";
 const EMAILJS_TEMPLATE_ID = "template_rfg6qna";
 
 emailjs.init(EMAILJS_PUBLIC_KEY);
+
+// (Opcional, RF29) Plantilla para avisar al titular que su cuenta fue bloqueada. Variables: {{to_email}}, {{minutos}}, {{hasta}}.
+// En el destinatario de la plantilla pon {{to_email}}. Mientras esté vacío, no se envía este aviso.
+const EMAILJS_TEMPLATE_BLOQUEO = "";

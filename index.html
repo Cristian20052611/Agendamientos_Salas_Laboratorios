@@ -21,8 +21,8 @@
     <h1>Agenda de Aulas</h1>
     <p class="subtitle">Sede II · Acceso de usuarios</p>
     <div class="field">
-      <label for="login-user">Usuario o código</label>
-      <input type="text" id="login-user" autocomplete="username" required>
+      <label for="login-user">Correo institucional</label>
+      <input type="email" id="login-user" autocomplete="username" required>
     </div>
     <div class="field">
       <label for="login-pass">Contraseña</label>
@@ -30,7 +30,33 @@
     </div>
     <div id="login-error"></div>
     <button type="submit" class="btn-primary">Ingresar</button>
-    <p class="login-hint">Demo: cualquier usuario y contraseña funcionan.</p>
+    <p class="login-hint"><a href="#" id="go-register">Crear cuenta</a> · <a href="#" id="go-recover">Olvidé mi contraseña</a></p>
+  </form>
+
+  <form class="id-card" id="register-form" style="display:none;">
+    <div class="badge">S2</div>
+    <h1>Crear cuenta</h1>
+    <p class="subtitle">Estudiantes y docentes</p>
+    <div class="field"><label for="reg-nombre">Nombre completo</label><input type="text" id="reg-nombre" required></div>
+    <div class="field"><label for="reg-doc">Número de identificación</label><input type="text" id="reg-doc" inputmode="numeric" required></div>
+    <div class="field"><label for="reg-email">Correo institucional</label><input type="email" id="reg-email" required></div>
+    <div class="field"><label for="reg-rol">Tipo de usuario</label>
+      <select id="reg-rol"><option value="estudiante">Estudiante</option><option value="docente">Docente</option></select></div>
+    <div class="field"><label for="reg-pass">Contraseña (mín. 8, con letras y números)</label><input type="password" id="reg-pass" autocomplete="new-password" required></div>
+    <div class="field"><label for="reg-pass2">Confirmar contraseña</label><input type="password" id="reg-pass2" autocomplete="new-password" required></div>
+    <div id="register-error"></div>
+    <button type="submit" class="btn-primary">Registrarme</button>
+    <p class="login-hint"><a href="#" class="go-login">Ya tengo cuenta</a></p>
+  </form>
+
+  <form class="id-card" id="recover-form" style="display:none;">
+    <div class="badge">S2</div>
+    <h1>Recuperar contraseña</h1>
+    <p class="subtitle">Te enviaremos un enlace de un solo uso</p>
+    <div class="field"><label for="rec-email">Correo institucional</label><input type="email" id="rec-email" required></div>
+    <div id="recover-msg"></div>
+    <button type="submit" class="btn-primary">Enviar enlace</button>
+    <p class="login-hint"><a href="#" class="go-login">Volver</a></p>
   </form>
 </div>
 
@@ -47,6 +73,10 @@
     <div class="user-chip">
       <div class="avatar" id="user-avatar">--</div>
       <span id="user-name">Usuario</span>
+      <button class="btn-ghost" id="notif-btn">Notificaciones</button>
+      <button class="btn-ghost" id="cal-btn">Calendario</button>
+      <button class="btn-ghost" id="my-reports-btn">Reportar daño</button>
+      <button class="btn-ghost" id="damage-admin-btn" style="display:none;">Daños</button>
       <button class="btn-ghost" id="my-bookings-btn">Mis reservas</button>
       <button class="btn-ghost" id="logout-btn">Salir</button>
     </div>
@@ -75,6 +105,15 @@
         <button class="chip-option" data-piso="5">Piso 5 (501–502)</button>
         <button class="chip-option" data-piso="lab">Laboratorios</button>
         <button class="chip-option" data-piso="especial">Salas especiales</button>
+      </div>
+
+      <div class="filter-group">
+        <h3>Buscar y filtrar</h3>
+        <input type="text" id="f-search" placeholder="Nombre o código">
+        <select id="f-recurso"><option value="">Cualquier recurso</option></select>
+        <input type="number" id="f-min" min="1" placeholder="Mín. equipos operativos">
+        <input type="number" id="f-aforo" min="1" placeholder="Aforo mínimo">
+        <label style="font-size:13px;"><input type="checkbox" id="f-ok"> Solo espacios sin bloqueo</label>
       </div>
 
       <div class="filter-group">
@@ -142,8 +181,11 @@
         <input type="text" id="booking-doc" placeholder="Ej: 1029384756" inputmode="numeric">
         <label for="booking-subject">Motivo / materia</label>
         <input type="text" id="booking-subject" placeholder="Ej: Estudio en grupo, Álgebra Lineal">
+        <label for="booking-asist">Cantidad de asistentes</label>
+        <input type="number" id="booking-asist" min="1" placeholder="Ej: 25">
         <div class="row-btns">
-          <button class="btn-primary btn-confirm" id="confirm-booking" type="button">Confirmar reserva</button>
+          <label id="rep-row" style="display:none;"><input type="checkbox" id="booking-rep"> Repetir cada semana · fechas en total (2–4): <input type="number" id="booking-reps" min="2" max="4" value="4" style="width:60px;"></label>
+        <button class="btn-primary btn-confirm" id="confirm-booking" type="button">Confirmar reserva</button>
           <button class="btn-primary btn-muted" id="cancel-form" type="button">Cancelar</button>
         </div>
       </div>
@@ -159,7 +201,8 @@
       <h3>Mis reservas</h3>
       <button class="modal-close" id="mybookings-close">✕</button>
     </div>
-    <div class="modal-sub">Estas son las horas que has agendado. Puedes cancelarlas desde aquí.</div>
+    <div class="modal-sub">Estas son tus reservas. Puedes modificarlas o cancelarlas mientras sigan activas.</div>
+    <select id="mybookings-filter"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="confirmada">Confirmadas</option><option value="rechazada">Rechazadas</option><option value="cancelada">Canceladas</option><option value="no_asistio">No asistió</option><option value="finalizada">Finalizadas</option></select>
     <div class="slot-list" id="mybookings-list"></div>
     <div class="empty-state" id="mybookings-empty" style="display:none;">Todavía no tienes reservas.</div>
   </div>
@@ -178,6 +221,27 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="users-backdrop">
+  <div class="modal">
+    <div class="modal-head"><h3>Usuarios</h3><button class="modal-close" id="users-close">✕</button></div>
+    <div class="modal-sub">Cambia el rol o activa/desactiva cuentas. Al desactivar se conserva el histórico y se cancelan las reservas futuras.</div>
+    <button class="btn-primary" id="users-new-btn" type="button" style="margin-bottom:12px;">+ Crear cuenta</button>
+    <div class="slot-list" id="users-list"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modify-backdrop"><div class="modal"><div class="modal-head"><h3>Modificar reserva</h3><button class="modal-close" id="modify-close">✕</button></div><div class="modal-sub" id="modify-sub"></div><div class="booking-form open"><label for="mod-date">Fecha</label><input type="date" id="mod-date"><label for="mod-slot">Horario</label><select id="mod-slot"></select><label for="mod-subject">Motivo</label><input type="text" id="mod-subject"><label for="mod-asist">Cantidad de asistentes</label><input type="number" id="mod-asist" min="1"><div class="row-btns"><button class="btn-primary btn-confirm" id="mod-save" type="button">Guardar</button><button class="btn-primary btn-muted" id="mod-cancel" type="button">Cancelar</button></div></div></div></div>
+<div class="modal-backdrop" id="reject-backdrop"><div class="modal"><div class="modal-head"><h3>Rechazar reserva</h3><button class="modal-close" id="reject-close">✕</button></div><div class="booking-form open"><label for="rej-motivo">Motivo del rechazo</label><input type="text" id="rej-motivo"><div class="row-btns"><button class="btn-primary btn-confirm" id="rej-save" type="button">Rechazar</button><button class="btn-primary btn-muted" id="rej-cancel" type="button">Cancelar</button></div></div></div></div>
+<div class="modal-backdrop" id="rules-backdrop"><div class="modal"><div class="modal-head"><h3>Límites de reserva</h3><button class="modal-close" id="rules-close">✕</button></div><div class="modal-sub">Máximo de bloques de 1 hora por día y de reservas activas por tipo de usuario.</div><div class="booking-form open"><label for="rg-max_dia_estudiante">Estudiante · bloques por día</label><input type="number" min="1" id="rg-max_dia_estudiante"><label for="rg-max_activas_estudiante">Estudiante · reservas activas</label><input type="number" min="1" id="rg-max_activas_estudiante"><label for="rg-max_dia_docente">Docente · bloques por día</label><input type="number" min="1" id="rg-max_dia_docente"><label for="rg-max_activas_docente">Docente · reservas activas</label><input type="number" min="1" id="rg-max_activas_docente"><div class="row-btns"><button class="btn-primary btn-confirm" id="rules-save" type="button">Guardar</button><button class="btn-primary btn-muted" id="rules-cancel" type="button">Cancelar</button></div></div></div></div>
+<div class="modal-backdrop" id="uedit-backdrop"><div class="modal"><div class="modal-head"><h3 id="ue-title">Crear cuenta</h3><button class="modal-close" id="ue-close">✕</button></div><div class="booking-form open"><label for="ue-nombre">Nombre completo</label><input type="text" id="ue-nombre"><label for="ue-doc">Número de identificación</label><input type="text" id="ue-doc" inputmode="numeric"><label for="ue-email">Correo institucional</label><input type="email" id="ue-email"><label for="ue-rol">Rol</label><select id="ue-rol"></select><div id="ue-passrow"><label for="ue-pass">Contraseña inicial (8+, letras y números)</label><input type="password" id="ue-pass" autocomplete="new-password"></div><div class="row-btns"><button class="btn-primary btn-confirm" id="ue-save" type="button">Guardar</button><button class="btn-primary btn-muted" id="ue-cancel" type="button">Cancelar</button></div></div></div></div>
+
+<div class="modal-backdrop" id="out-backdrop"><div class="modal"><div class="modal-head"><h3>Finalizar uso del espacio</h3><button class="modal-close" id="out-close">✕</button></div><div class="booking-form open"><label for="out-ok">Estado en que entregas el espacio</label><select id="out-ok"><option value="ok">Buen estado</option><option value="nov">Con novedades (aseo, mobiliario o equipos)</option></select><label for="out-desc">Descripción de la novedad</label><input type="text" id="out-desc"><div class="row-btns"><button class="btn-primary btn-confirm" id="out-save" type="button">Registrar entrega</button><button class="btn-primary btn-muted" id="out-cancel" type="button">Cancelar</button></div></div></div></div>
+<div class="modal-backdrop" id="rc-backdrop"><div class="modal"><div class="modal-head"><h3>Cambiar salón</h3><button class="modal-close" id="rc-close">✕</button></div><div class="booking-form open"><label for="rc-room">Nuevo espacio</label><select id="rc-room"></select><label for="rc-motivo">Motivo del cambio</label><input type="text" id="rc-motivo"><div class="row-btns"><button class="btn-primary btn-confirm" id="rc-save" type="button">Cambiar</button><button class="btn-primary btn-muted" id="rc-cancel" type="button">Cancelar</button></div></div></div></div>
+<div class="modal-backdrop" id="serie-backdrop"><div class="modal"><div class="modal-head"><h3>Reserva recurrente</h3><button class="modal-close" id="serie-close0" onclick="this.closest('.modal-backdrop').style.display='none'">✕</button></div><div id="serie-body"></div><div class="row-btns"><button class="btn-primary btn-confirm" id="serie-keep" type="button">Conservar las reservadas</button><button class="btn-primary btn-muted" id="serie-drop" type="button">Cancelar la serie</button></div></div></div>
+<div class="modal-backdrop" id="susp-backdrop"><div class="modal"><div class="modal-head"><h3>Usuarios suspendidos</h3><button class="modal-close" id="susp-close">✕</button></div><div class="modal-sub">Suspendidos por 3 inasistencias en 30 días (7 días de suspensión).</div><div class="slot-list" id="susp-list"></div></div></div>
+
+<div class="modal-backdrop" id="panel-backdrop"><div class="modal"><div class="modal-head"><h3 id="panel-title"></h3><button class="modal-close" id="panel-close">✕</button></div><div id="panel-body"></div></div></div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ============ PANEL COORDINADOR ============ -->
@@ -191,6 +255,17 @@
       </div>
     </div>
     <div class="user-chip">
+      <button class="btn-ghost" id="coord-notif-btn">Notificaciones</button>
+      <button class="btn-ghost" id="coord-cal-btn">Calendario</button>
+      <button class="btn-ghost" id="coord-rep-btn">Reportes</button>
+      <button class="btn-ghost" id="coord-bulk-btn">Carga masiva</button>
+      <button class="btn-ghost" id="coord-inv-btn" style="display:none;">Inventario</button>
+      <button class="btn-ghost" id="coord-blk-btn" style="display:none;">Bloqueos</button>
+      <button class="btn-ghost" id="coord-dmg-btn" style="display:none;">Daños</button>
+      <button class="btn-ghost" id="coord-ev-btn" style="display:none;">Eventos</button>
+      <button class="btn-ghost" id="coord-susp-btn" style="display:none;">Suspendidos</button>
+      <button class="btn-ghost" id="coord-rules-btn">Límites</button>
+      <button class="btn-ghost" id="coord-users-btn" style="display:none;">Usuarios</button>
       <button class="btn-ghost" id="coord-reservas-btn">Ver reservas</button>
       <button class="btn-ghost" id="coord-logout-btn">Salir</button>
     </div>
@@ -244,6 +319,9 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

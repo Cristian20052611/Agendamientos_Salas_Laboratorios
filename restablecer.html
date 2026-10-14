@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restablecer contraseña · Agenda de Aulas Sede II</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script></head>
+<body>
+<div id="login-screen" style="display:flex;">
+  <form class="id-card" id="reset-form">
+    <div class="badge">S2</div><h1>Nueva contraseña</h1>
+    <p class="subtitle" id="reset-msg">Verificando enlace...</p>
+    <div id="reset-fields" style="display:none;">
+      <div class="field"><label for="p1">Nueva contraseña (mín. 8, letras y números)</label><input type="password" id="p1" autocomplete="new-password" required></div>
+      <div class="field"><label for="p2">Confirmar contraseña</label><input type="password" id="p2" autocomplete="new-password" required></div>
+      <button type="submit" class="btn-primary">Guardar contraseña</button>
+    </div>
+    <p class="login-hint"><a href="index.html">Volver al inicio de sesión</a></p>
+  </form>
+</div>
+<script>
+(function(){
+  var msg = document.getElementById('reset-msg'), fields = document.getElementById('reset-fields');
+  var ready = false;
+  supabaseClient.auth.onAuthStateChange(function(ev){
+    if(ev === 'PASSWORD_RECOVERY'){ ready = true; msg.textContent = 'Escribe tu nueva contraseña.'; fields.style.display = 'block'; }
+  });
+  setTimeout(function(){ if(!ready) msg.textContent = 'El enlace está vencido o ya fue utilizado. Solicita uno nuevo desde el inicio de sesión.'; }, 2500);
+  document.getElementById('reset-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var a = document.getElementById('p1').value, b = document.getElementById('p2').value;
+    if(a.length < 8 || !/[A-Za-z]/.test(a) || !/\d/.test(a)){ msg.textContent = 'La contraseña debe tener al menos 8 caracteres, con letras y números.'; return; }
+    if(a !== b){ msg.textContent = 'Las contraseñas no coinciden.'; return; }
+    supabaseClient.auth.updateUser({password: a}).then(function(r){
+      if(r.error){ msg.textContent = 'No se pudo actualizar: ' + r.error.message; return; }
+      fields.style.display = 'none'; msg.textContent = 'Contraseña actualizada. Ya puedes iniciar sesión.';
+      supabaseClient.auth.signOut();
+    });
+  });
+})();
+</script></body></html>
